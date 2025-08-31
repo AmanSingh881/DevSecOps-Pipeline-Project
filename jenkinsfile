@@ -1,0 +1,106 @@
+pipeline {
+    agent any
+
+     // Pipeline parameters (user-defined input values when running the pipeline)
+     parameters {
+        string(name: 'DEPLOY_VERSION', defaultValue: '', description: 'Enter the version to deploy (used in userdata script)')
+      }
+    // Environment variables used across the pipeline
+    environment {
+            // Secrets stored in AWS Secret Manager
+            IMAGE_TAG="${params.DEPLOY_VERSION}"
+            REPOSITORY_URI=credentials("REPOSITORY_URI")
+            IMAGE_REPO_NAME=credentials("IMAGE_REPO_NAME")
+            REGION=credentials("REGION")
+            ACCOUNT_ID=credentials('ACCOUNT_ID')
+            
+            SONAR_HOME = tool "Sonar"
+    }
+
+    stages {
+      // Stage 1: Clone application code from GitHub
+        stage('Git Checkout') {
+            steps {
+                // Get some code from a GitHub repository
+                git(
+                    url: "https://github.com/AmanSingh881/DevSecOps-Pipeline-Project.git",
+                    branch: "main"
+                )
+
+            }
+        }
+        // Stage 2: Run static code analysis with SonarQube
+         stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv("Sonar") {
+                    sh """
+                        ${SONAR_HOME}/bin/sonar-scanner \
+                        -Dsonar.projectKey=AmanSingh881_ANSIBLE_PROJECT \
+                        -Dsonar.organization=amansingh881 \
+                        -Dsonar.projectName=ANSIBLE_PROJECT \
+                    """
+                }
+            }
+        }
+        // Stage 3: Check SonarQube Quality Gate
+        stage("Quality Gate") {
+            steps {
+                echo "Step: Checking SonarQube Quality Gate"
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+         // Stage 4: Run OWASP Dependency-Check for vulnerabilities
+         // Performs dependency check for security vulnerabilities
+        stage("OWASP dependency check") {
+            steps{
+                // dependencyCheck additionalArguments: '--format HTML', ocdInstallation: 'DP-Check'
+                dependencyCheck additionalArguments: '', odcInstallation: 'DP-Check'
+            }
+        }
+        
+        // Stage 5: Build Docker image from the Dockerfile
+        stage('Docker Build Image') {
+              steps {
+                sh 'docker build -t ${IMAGE_REPO_NAME}:${IMAGE_TAG} .'
+              }
+        }
+    
+        // Stage 6: Authenticate to AWS ECR and push Docker image
+        stage('Pushing to ECR') {
+          steps {  
+            script {
+              // Authenticate Docker to AWS ECR using AWS CLI
+              sh """
+                aws ecr get-login-password --region ${REGION} \
+                  | docker login \
+                      --username AWS \
+                      --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
+              """
+              // Tag the Docker image with ECR repository URI
+              sh """
+                docker tag ${IMAGE_REPO_NAME}:${IMAGE_TAG} ${REPOSITORY_URI}:${IMAGE_TAG}
+              """
+              // Push the image to AWS ECR
+              sh """
+                docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}
+              """
+            }
+          }
+        }
+    }
+  // Post-build cleanup actions (always executed)
+    post {
+        always {
+            echo "Cleaning up local Docker images..."
+            sh """
+                docker rmi ${IMAGE_REPO_NAME}:${IMAGE_TAG} || true
+                docker rmi ${REPOSITORY_URI}:${IMAGE_TAG} || true
+                docker image prune -f || true
+            """
+        }
+    }
+
+}
+

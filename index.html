@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body style="font-family: sans-serif;">
+
+    <h1 style="text-align: center;">HTML Forms 6</h1>
+    <h2 style="text-align: center;"> PROJECT 666</h2>
+
+    <form action="https://www.naukri.com/cloud-jobs/">
+        
+        <!--  -->
+        
+        <input hidden type="text" id="fname" name="k" value="cloud" required>
+        
+        <br><br>
+
+        <label for="lname">Provide years of experience:</label>
+        <input type="number" id="lname" name="experience">
+        
+        <br><br>
+
+        <!--  -->
+
+        <div class="dropdown">
+
+            <label>Work mode :</label>
+            <br>
+            
+            <ul>
+              <li>
+                <input type="checkbox" id="option1" name="wfhType" value="0">
+                <label for="option1">Work from office </label>
+              </li>
+              <li>
+                <input type="checkbox" id="option2" name="wfhType" value="2">
+                <label for="option2">Remote </label>
+              </li>
+              <li>
+                <input type="checkbox" id="option3" name="wfhType" value="3">
+                <label for="option3">Hybrid</label>
+              </li>
+              <!-- ... -->
+            </ul>
+        </div>
+        
+        <!--  -->
+
+        <div class="dropdown">
+
+            <label>Company type :</label>
+            <br>
+            
+            <ul>
+              <li>
+                <input type="checkbox" id="option4" name="qbusinessSize" value="213">
+                <label for="option4">Foreign MNC </label>
+              </li>
+              <li>
+                <input type="checkbox" id="option2" name="qbusinessSize" value="211">
+                <label for="option2">Corporate </label>
+              </li>
+              <li>
+                <input type="checkbox" id="option3" name="qbusinessSize" value="62">
+                <label for="option3">Startup</label>
+              </li>
+              <li>
+                <input type="checkbox" id="option3" name="qbusinessSize" value="217">
+                <label for="option3">Indian MNC</label>
+              </li>
+              <!-- ... -->
+            </ul>
+        </div>
+
+        <!--  -->
+
+        <input type="checkbox" required id="confirmation">
+        <label for="confirmation">Please Confirm</label>
+
+        <br><br>
+
+        <input type="submit" value="Submit">
+    
+    </form>
+
+
+
+
+</body>
+
+</html>
